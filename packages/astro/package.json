@@ -6,6 +6,11 @@
   "type": "module",
   "types": "./dist/types",
   "exports": {
+    "./dist/frontend/render/preact.js": "./dist/frontend/render/preact.js",
+    "./dist/frontend/render/react.js": "./dist/frontend/render/react.js",
+    "./dist/frontend/render/svelte.js": "./dist/frontend/render/svelte.js",
+    "./dist/frontend/runtime/svelte.js": "./dist/frontend/runtime/svelte.js",
+    "./dist/frontend/render/vue.js": "./dist/frontend/render/vue.js",
     ".": "./astro.mjs",
     "./snowpack-plugin": "./snowpack-plugin.cjs",
     "./components/*": "./components/*",

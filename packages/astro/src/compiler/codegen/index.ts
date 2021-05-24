@@ -144,11 +144,12 @@ interface GetComponentWrapperOptions {
   filename: string;
   astroConfig: AstroConfig;
   dynamicImports: DynamicImportMap;
+  frameworkImports: Map<string, string>;
 }
 
 /** Generate Astro-friendly component import */
 function getComponentWrapper(_name: string, { type, plugin, url }: ComponentInfo, opts: GetComponentWrapperOptions) {
-  const { astroConfig, dynamicImports, filename } = opts;
+  const { astroConfig, dynamicImports, filename, frameworkImports } = opts;
   const { astroRoot } = astroConfig;
   const [name, kind] = _name.split(':');
   const currFileUrl = new URL(`file://${filename}`);
@@ -182,13 +183,13 @@ function getComponentWrapper(_name: string, { type, plugin, url }: ComponentInfo
               preact: dynamicImports.get('preact'),
             },
           })})`,
-          wrapperImport: `import {__preact_${kind}} from '${internalImport('render/preact.js')}';`,
+          wrapperImport: `import {__preact_${kind}} from '${frameworkImports.get('preact-render')}';`,
         };
       }
 
       return {
         wrapper: `__preact_static(${name})`,
-        wrapperImport: `import {__preact_static} from '${internalImport('render/preact.js')}';`,
+        wrapperImport: `import {__preact_static} from '${frameworkImports.get('preact-render')}';`,
       };
     }
     case 'react': {
@@ -202,13 +203,13 @@ function getComponentWrapper(_name: string, { type, plugin, url }: ComponentInfo
               'react-dom': dynamicImports.get('react-dom'),
             },
           })})`,
-          wrapperImport: `import {__react_${kind}} from '${internalImport('render/react.js')}';`,
+          wrapperImport: `import {__react_${kind}} from '${frameworkImports.get('react-render')}';`,
         };
       }
 
       return {
         wrapper: `__react_static(${name})`,
-        wrapperImport: `import {__react_static} from '${internalImport('render/react.js')}';`,
+        wrapperImport: `import {__react_static} from '${frameworkImports.get('react-render')}';`,
       };
     }
     case 'svelte': {
@@ -218,16 +219,16 @@ function getComponentWrapper(_name: string, { type, plugin, url }: ComponentInfo
             componentUrl: getComponentUrl('.svelte.js'),
             componentExport: 'default',
             frameworkUrls: {
-              'svelte-runtime': internalImport('runtime/svelte.js'),
+              'svelte-runtime': frameworkImports.get('svelte-runtime'),
             },
           })})`,
-          wrapperImport: `import {__svelte_${kind}} from '${internalImport('render/svelte.js')}';`,
+          wrapperImport: `import {__svelte_${kind}} from '${frameworkImports.get('svelte-render')}';`,
         };
       }
 
       return {
         wrapper: `__svelte_static(${name})`,
-        wrapperImport: `import {__svelte_static} from '${internalImport('render/svelte.js')}';`,
+        wrapperImport: `import {__svelte_static} from '${frameworkImports.get('svelte-render')}';`,
       };
     }
     case 'vue': {
@@ -240,13 +241,13 @@ function getComponentWrapper(_name: string, { type, plugin, url }: ComponentInfo
               vue: dynamicImports.get('vue'),
             },
           })})`,
-          wrapperImport: `import {__vue_${kind}} from '${internalImport('render/vue.js')}';`,
+          wrapperImport: `import {__vue_${kind}} from '${frameworkImports.get('vue-render')}';`,
         };
       }
 
       return {
         wrapper: `__vue_static(${name})`,
-        wrapperImport: `import {__vue_static} from '${internalImport('render/vue.js')}';`,
+        wrapperImport: `import {__vue_static} from '${frameworkImports.get('vue-render')}';`,
       };
     }
     default: {
@@ -267,30 +268,36 @@ function compileExpressionSafe(raw: string): string {
 }
 
 /** Build dependency map of dynamic component runtime frameworks */
-async function acquireDynamicComponentImports(plugins: Set<ValidExtensionPlugins>, resolvePackageUrl: (s: string) => Promise<string>): Promise<DynamicImportMap> {
-  const importMap: DynamicImportMap = new Map();
+async function acquireComponentImports(plugins: Set<ValidExtensionPlugins>, resolvePackageUrl: (s: string) => Promise<string>): Promise<[DynamicImportMap, Map<string, string>]> {
+  const dynamicImportMap: DynamicImportMap = new Map();
+  const frameworkImportMap: Map<string, string> = new Map();
   for (let plugin of plugins) {
     switch (plugin) {
       case 'vue': {
-        importMap.set('vue', await resolvePackageUrl('vue'));
+        dynamicImportMap.set('vue', await resolvePackageUrl('vue'));
+        frameworkImportMap.set('vue-render', await resolvePackageUrl('astro/dist/frontend/render/vue.js'));
         break;
       }
       case 'react': {
-        importMap.set('react', await resolvePackageUrl('react'));
-        importMap.set('react-dom', await resolvePackageUrl('react-dom'));
+        dynamicImportMap.set('react', await resolvePackageUrl('react'));
+        dynamicImportMap.set('react-dom', await resolvePackageUrl('react-dom'));
+        frameworkImportMap.set('react-render', await resolvePackageUrl('astro/dist/frontend/render/react.js'));
         break;
       }
       case 'preact': {
-        importMap.set('preact', await resolvePackageUrl('preact'));
+        dynamicImportMap.set('preact', await resolvePackageUrl('preact'));
+        frameworkImportMap.set('preact-render', await resolvePackageUrl('astro/dist/frontend/render/preact.js'));
         break;
       }
       case 'svelte': {
-        importMap.set('svelte', await resolvePackageUrl('svelte'));
+        dynamicImportMap.set('svelte', await resolvePackageUrl('svelte'));
+        frameworkImportMap.set('svelte-render', await resolvePackageUrl('astro/dist/frontend/render/svelte.js'));
+        frameworkImportMap.set('svelte-runtime', await resolvePackageUrl('astro/dist/frontend/runtime/svelte.js'));
         break;
       }
     }
   }
-  return importMap;
+  return [dynamicImportMap, frameworkImportMap];
 }
 
 type Components = Record<string, { type: string; url: string; plugin: string | undefined }>;
@@ -310,6 +317,7 @@ interface CodegenState {
   };
   importExportStatements: Set<string>;
   dynamicImports: DynamicImportMap;
+  frameworkImports: Map<string, string>;
 }
 
 /** Compile/prepare Astro frontmatter scripts */
@@ -540,7 +548,7 @@ function compileCss(style: Style, state: CodegenState) {
 
 /** Compile page markup */
 function compileHtml(enterNode: TemplateNode, state: CodegenState, compileOptions: CompileOptions) {
-  const { components, css, importExportStatements, dynamicImports, filename } = state;
+  const { components, css, importExportStatements, dynamicImports, filename, frameworkImports } = state;
   const { astroConfig } = compileOptions;
 
   let outSource = '';
@@ -609,7 +617,7 @@ function compileHtml(enterNode: TemplateNode, state: CodegenState, compileOption
                 return;
               }
             }
-            const { wrapper, wrapperImport } = getComponentWrapper(name, components[componentName], { astroConfig, dynamicImports, filename });
+            const { wrapper, wrapperImport } = getComponentWrapper(name, components[componentName], { astroConfig, dynamicImports, filename, frameworkImports });
             if (wrapperImport) {
               importExportStatements.add(wrapperImport);
             }
@@ -714,10 +722,13 @@ export async function codegen(ast: Ast, { compileOptions, filename }: CodeGenOpt
     },
     importExportStatements: new Set(),
     dynamicImports: new Map(),
+    frameworkImports: new Map()
   };
 
   const { script, componentPlugins, createCollection } = compileModule(ast.module, state, compileOptions);
-  state.dynamicImports = await acquireDynamicComponentImports(componentPlugins, compileOptions.resolvePackageUrl);
+  const [dynamicImports, frameworkImports] = await acquireComponentImports(componentPlugins, compileOptions.resolvePackageUrl);
+  state.dynamicImports = dynamicImports;
+  state.frameworkImports = frameworkImports;
 
   compileCss(ast.css, state);
 
