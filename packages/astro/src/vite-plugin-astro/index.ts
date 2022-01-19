@@ -42,7 +42,7 @@ export default function astro({ config, logging }: AstroPluginOptions): vite.Plu
 					} else if (filename.startsWith('/') && !ancestor(filename, config.projectRoot.pathname)) {
 						filename = new URL('.' + filename, config.projectRoot).pathname;
 					}
-					const transformResult = await cachedCompilation(config, filename, null, viteTransform, opts);
+					const transformResult = await cachedCompilation(config, filename, null, viteTransform, { ssr: Boolean(opts?.ssr) });
 
 					if (typeof query.index === 'undefined') {
 						throw new Error(`Requests for Astro CSS must include an index.`);
@@ -65,7 +65,7 @@ export default function astro({ config, logging }: AstroPluginOptions): vite.Plu
 			}
 
 			try {
-				const transformResult = await cachedCompilation(config, id, source, viteTransform, opts);
+				const transformResult = await cachedCompilation(config, id, source, viteTransform, { ssr: Boolean(opts?.ssr) });
 
 				// Compile all TypeScript to JavaScript.
 				// Also, catches invalid JS/TS in the compiled output before returning.
