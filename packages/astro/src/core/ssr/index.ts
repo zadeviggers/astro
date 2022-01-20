@@ -20,11 +20,10 @@ import eol from 'eol';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { renderPage } from '../../runtime/server/index.js';
+import { renderToString } from '../../runtime/server/index.js';
 import { codeFrame, resolveDependency } from '../util.js';
 import { getStylesForURL } from './css.js';
 import { injectTags } from './html.js';
-import { generatePaginateFunction } from './paginate.js';
 import { getParams, validateGetStaticPathsModule, validateGetStaticPathsResult } from './routing.js';
 import { createResult } from './result.js';
 import { assignStaticPaths, ensureRouteCached, findPathItemByKey } from './route-cache.js';
@@ -233,7 +232,7 @@ export async function render(renderers: Renderer[], mod: ComponentInstance, ssrO
 		}
 	};
 
-	let html = await renderPage(result, Component, pageProps, null);
+	let html = await renderToString(result, Component, pageProps, null);
 
 	// inject tags
 	const tags: vite.HtmlTagDescriptor[] = [];

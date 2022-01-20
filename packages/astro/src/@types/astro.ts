@@ -270,17 +270,6 @@ export type Params = Record<string, string | undefined>;
 
 export type Props = Record<string, unknown>;
 
-export interface RenderPageOptions {
-	request: {
-		params?: Params;
-		url: URL;
-		canonicalURL: URL;
-	};
-	children: any[];
-	props: Props;
-	css?: string[];
-}
-
 /**
  * Astro Renderer
  * Docs: https://docs.astro.build/reference/renderer-reference/
