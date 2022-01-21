@@ -1,5 +1,13 @@
 # astro
 
+## 0.22.18
+
+### Patch Changes
+
+- [#2423](https://github.com/withastro/astro/pull/2423) [`ebe414f0`](https://github.com/withastro/astro/commit/ebe414f05b69d50de4aab64358cd4a31c254f7e6) Thanks [@delucis](https://github.com/delucis)! - Resolve sitemap URLs in relation to full site path
+
+* [#2443](https://github.com/withastro/astro/pull/2443) [`ed0b46f9`](https://github.com/withastro/astro/commit/ed0b46f96faf144fe0946bce1528f4d605a4a42c) Thanks [@natemoo-re](https://github.com/natemoo-re)! - Fix bug with RSS feed generation. `rss()` can now be called multiple times and URLs can now be fully qualified.
+
 ## 0.22.17
 
 ### Patch Changes
@@ -1174,10 +1182,10 @@ For convenience, you may now also move your `astro.config.js` file to a top-leve
 
   ```js
   export default {
-    markdownOptions: {
-      remarkPlugins: ['remark-slug', ['remark-autolink-headings', { behavior: 'prepend' }]],
-      rehypePlugins: ['rehype-slug', ['rehype-autolink-headings', { behavior: 'prepend' }]],
-    },
+  	markdownOptions: {
+  		remarkPlugins: ['remark-slug', ['remark-autolink-headings', { behavior: 'prepend' }]],
+  		rehypePlugins: ['rehype-slug', ['rehype-autolink-headings', { behavior: 'prepend' }]],
+  	},
   };
   ```
 
@@ -1197,10 +1205,10 @@ For convenience, you may now also move your `astro.config.js` file to a top-leve
 
   ```js
   export default {
-    name: '@matthewp/my-renderer',
-    server: './server.js',
-    client: './client.js',
-    hydrationPolyfills: ['./my-polyfill.js'],
+  	name: '@matthewp/my-renderer',
+  	server: './server.js',
+  	client: './client.js',
+  	hydrationPolyfills: ['./my-polyfill.js'],
   };
   ```
 
